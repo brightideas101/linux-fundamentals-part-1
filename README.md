@@ -1,0 +1,1 @@
+After the first week of cybersecurity studies at CodeAcademy, I felt something like this: Try your own user and password, or a new one. If you get lost among the commands, you can use the help command.
