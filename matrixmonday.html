@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Matrix Terminal</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: black;
+      color: white;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    #terminal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      padding: 20px;
+      box-sizing: border-box;
+      white-space: pre-wrap;
+    }
+    #output {
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
+    #login, #password-container {
+      color: white;
+      font-family: monospace;
+      user-select: none;
+    }
+    #login-input, #password-input {
+      outline: none;
+      white-space: nowrap;
+      display: inline-block;
+      min-width: 100px;
+      color: white;
+      background: transparent;
+      border: none;
+      font-family: monospace;
+      user-select: text;
+      caret-color: white;
+    }
+    #shell {
+      display: none;
+    }
+    #prompt, #input-line {
+      display: inline;
+    }
+    input#command-input {
+      background: transparent;
+      border: none;
+      color: white;
+      font: inherit;
+      outline: none;
+      width: 50%;
+    }
+    .pill-choice {
+      color: red;
+      cursor: pointer;
+    }
+    .pill-blue {
+      color: blue;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <div id="terminal">
+    <div id="output"></div>
+    <div id="login">
+      login: <span id="login-input" contenteditable="true" spellcheck="false"></span>
+    </div>
+    <div id="password-container" style="display:none">
+      password: <span id="password-input" contenteditable="true" spellcheck="false"></span>
+    </div>
+    <div id="welcome" style="display:none"></div>
+    <div id="shell">
+      <span id="prompt"></span><span id="input-line"></span><input type="text" id="command-input" autocomplete="off" />
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%';
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.85)';
+      ctx.font = fontSize + 'px monospace';
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+
+    setInterval(drawMatrix, 100);
+
+    const quotes = [
+      "There is no spoon.",
+      "Wake up, Neo...",
+      "I know kung fu.",
+      "Welcome to the real world.",
+      "Free your mind.",
+      "The Matrix has you...",
+      "Follow the white rabbit.",
+      "Choice is an illusion.",
+      "You take the blue pill...",
+      "You take the red pill...",
+      "The Matrix is everywhere...",
+      "Unfortunately, no one can be told what the Matrix is...",
+      "I can only show you the door...",
+      "You have to see it for yourself.",
+      "Ignorance is bliss.",
+      "The body cannot live without the mind.",
+      "What is real? How do you define 'real'?",
+      "I'm trying to free your mind."
+    ];
+
+    const loginInput = document.getElementById('login-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginDiv = document.getElementById('login');
+    const passwordDiv = document.getElementById('password-container');
+    const welcomeDiv = document.getElementById('welcome');
+    const shell = document.getElementById('shell');
+    const prompt = document.getElementById('prompt');
+    const commandInput = document.getElementById('command-input');
+    const output = document.getElementById('output');
+
+    let username = '';
+    let awaitingPill = false;
+    let currentPath = ['/shadow'];
+
+    loginInput.focus();
+
+    loginInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        username = loginInput.innerText.trim() || 'neo';
+        loginDiv.style.display = 'none';
+        passwordDiv.style.display = 'block';
+        passwordInput.focus();
+      }
+    });
+
+    passwordInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        passwordDiv.style.display = 'none';
+        welcomeDiv.style.display = 'block';
+        welcomeDiv.innerText = `You must find your Matrix...`;
+        setTimeout(() => {
+          welcomeDiv.innerText = '';
+        }, 4000);
+        setTimeout(() => {
+          welcomeDiv.style.display = 'none';
+          shell.style.display = 'block';
+          prompt.innerText = `${username}@matrix:~$ `;
+          commandInput.focus();
+        }, 5000);
+      }
+    });
+
+    const commands = {
+      help: () => {
+        return `Available commands:
+  help        - show this help
+  clear       - clear the screen
+  whoami      - show current user
+  ls          - list directories (shows 'shadow')
+  pwd         - show current path (you are lost in the shadow)
+  cd          - enter into deeper shadow
+  man         - show Morpheus' monologue
+  red pill    - choose truth
+  blue pill   - choose illusion`;
+      },
+      clear: () => {
+        output.innerText = '';
+        return '';
+      },
+      whoami: () => username,
+      ls: () => {
+        output.innerText += `\nYou must find your Matrix...`;
+        return 'shadow';
+      },
+      pwd: () => '/ you are lost in the shadow.',
+      cd: () => {
+        currentPath.push('shadow');
+        return '';
+      },
+      man: () => {
+        awaitingPill = true;
+        return `Morpheus: You take the <span class='pill-blue'>blue pill</span> - the story ends, you wake up in your bed and believe whatever you want to believe.\nYou take the <span class='pill-choice'>red pill</span> - you stay in Wonderland and I show you how deep the rabbit-hole goes.`;
+      },
+      'blue pill': () => {
+        if (awaitingPill) {
+          awaitingPill = false;
+          return "You're not a true hacker. Go spend your bitcoins on vanilla ice cream.";
+        }
+        return `command not found: blue pill\n${quotes[Math.floor(Math.random() * quotes.length)]}`;
+      },
+      'red pill': () => {
+        if (awaitingPill) {
+          awaitingPill = false;
+          return "Then go and train at tryhackme.com — don't be lazy.";
+        }
+        return `command not found: red pill\n${quotes[Math.floor(Math.random() * quotes.length)]}`;
+      }
+    };
+
+    commandInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const cmd = commandInput.value.trim();
+        output.innerHTML += `\n${prompt.innerText}${cmd}`;
+        const result = commands[cmd] ? commands[cmd]() : `command not found: ${cmd}\n${quotes[Math.floor(Math.random() * quotes.length)]}`;
+        if (result) output.innerHTML += `\n${result}`;
+        commandInput.value = '';
+        output.scrollTop = output.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>
